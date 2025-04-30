@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Форма в стиле Telegram</title>
+  <style>
+    /* Стили в стиле Telegram (белый фон, голубой акцент, минимализм) */
+    body {
+      background-color: #f5f8fa;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 400px;
+      margin: 50px auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border: 1px solid #e0e0e0;
+    }
+    h2 {
+      color: #0088cc; /* фирменный синий цвет Telegram */
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+      color: #333;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ccdfff; /* лёгкий голубой */
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #0088cc;
+      box-shadow: 0 0 5px rgba(0,136,204,0.5);
+    }
+    button {
+      width: 100%;
+      background-color: #0088cc;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+    button:hover {
+      background-color: #0077b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Обратная связь</h2>
+    <form id="feedbackForm">
+      <label for="name">Имя (обязательное):</label>
+      <input type="text" id="name" placeholder="Ваше имя" required>
+      <label for="comment">Комментарий (необязательно):</label>
+      <textarea id="comment" rows="4" placeholder="Ваш комментарий"></textarea>
+      <button type="submit">Отправить</button>
+    </form>
+  </div>
+
+  <!-- Подключение Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-database-compat.js"></script>
+  <!-- Если нужен Firestore вместо Realtime Database, добавьте: -->
+  <!-- <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore-compat.js"></script> -->
+
+  <script>
+    // TODO: вставьте сюда вашу конфигурацию Firebase (см. раздел 4 ниже)
+    var firebaseConfig = {
+      apiKey: "API_KEY",
+      authDomain: "PROJECT_ID.firebaseapp.com",
+      databaseURL: "https://DATABASE_NAME.firebaseio.com",  // для Realtime DB
+      projectId: "PROJECT_ID",
+      storageBucket: "PROJECT_ID.appspot.com",
+      messagingSenderId: "SENDER_ID",
+      appId: "APP_ID"
+    };
+    // Инициализация Firebase
+    firebase.initializeApp(firebaseConfig);
+    var db = firebase.database();
+
+    // Обработчик события отправки формы
+    document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+      e.preventDefault(); // предотвращаем перезагрузку страницы
+      var nameVal = document.getElementById('name').value.trim();
+      var commentVal = document.getElementById('comment').value.trim();
+      if (!nameVal) {
+        alert('Пожалуйста, укажите имя.');
+        return;
+      }
+      // Создаём новую запись в базе (узел "feedback")
+      var newEntry = db.ref('feedback').push();
+      newEntry.set({
+        name: nameVal,
+        comment: commentVal || '',
+        date: new Date().toLocaleString()
+      }, function(error) {
+        if (error) {
+          alert('Ошибка при отправке: ' + error);
+        } else {
+          alert('Данные успешно отправлены!');
+          document.getElementById('feedbackForm').reset();
+        }
+      });
+      // Если используется Firestore вместо Realtime DB, код может выглядеть так:
+      // firebase.firestore().collection('feedback').add({ name: nameVal, comment: commentVal, date: firebase.firestore.FieldValue.serverTimestamp() });
+    });
+  </script>
+</body>
+</html>
