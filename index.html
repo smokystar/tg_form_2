@@ -1,124 +1,176 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Форма в стиле Telegram</title>
-  <style>
-    /* Стили в стиле Telegram (белый фон, голубой акцент, минимализм) */
-    body {
-      background-color: #f5f8fa;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-    .container {
-      max-width: 400px;
-      margin: 50px auto;
-      background-color: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      border: 1px solid #e0e0e0;
-    }
-    h2 {
-      color: #0088cc; /* фирменный синий цвет Telegram */
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    label {
-      display: block;
-      margin-top: 10px;
-      font-weight: bold;
-      color: #333;
-    }
-    input, textarea {
-      width: 100%;
-      padding: 8px;
-      margin-top: 5px;
-      border: 1px solid #ccdfff; /* лёгкий голубой */
-      border-radius: 4px;
-      box-sizing: border-box;
-    }
-    input:focus, textarea:focus {
-      outline: none;
-      border-color: #0088cc;
-      box-shadow: 0 0 5px rgba(0,136,204,0.5);
-    }
-    button {
-      width: 100%;
-      background-color: #0088cc;
-      color: #fff;
-      border: none;
-      padding: 10px;
-      font-size: 16px;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-top: 15px;
-    }
-    button:hover {
-      background-color: #0077b3;
-    }
-  </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>Форма обратной связи</title>
+    <style>
+        body {
+            --bg-color: var(--tg-theme-bg-color, #fff);
+            font-family: sans-serif;
+            background-color: var(--bg-color);
+            color: var(--tg-theme-text-color, #222);
+            font-size: 16px;
+            margin: 0;
+            padding: 0;
+            color-scheme: var(--tg-color-scheme);
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--tg-theme-text-color, #222);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--tg-theme-text-color, #222);
+        }
+
+        input[type="text"],
+        input[type="tel"] {
+            display: block;
+            width: 100%;
+            padding: 12px 20px;
+            box-sizing: border-box;
+            border: 1px solid var(--tg-theme-hint-color, #ccc);
+            border-radius: 4px;
+            background-color: var(--tg-theme-bg-color, #fff);
+            color: var(--tg-theme-text-color, #222);
+            font-size: 16px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--tg-theme-button-color, #50a8eb);
+        }
+
+        .hint {
+            font-size: 12px;
+            color: var(--tg-theme-hint-color, #999);
+            margin-top: 5px;
+        }
+
+        #status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        #status.success {
+            background-color: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+            display: block;
+        }
+
+        #status.error {
+            background-color: rgba(244, 67, 54, 0.2);
+            color: #F44336;
+            display: block;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Обратная связь</h2>
-    <form id="feedbackForm">
-      <label for="name">Имя (обязательное):</label>
-      <input type="text" id="name" placeholder="Ваше имя" required>
-      <label for="comment">Комментарий (необязательно):</label>
-      <textarea id="comment" rows="4" placeholder="Ваш комментарий"></textarea>
-      <button type="submit">Отправить</button>
-    </form>
-  </div>
+    <div class="container">
+        <h1>Форма обратной связи</h1>
+        <div class="form-group">
+            <label for="name">Ваше имя</label>
+            <input type="text" id="name" placeholder="Введите ваше имя">
+            <div class="hint">Необязательное поле</div>
+        </div>
+        <div class="form-group">
+            <label for="phone">Номер телефона</label>
+            <input type="tel" id="phone" placeholder="+7 (___) ___-__-__">
+            <div class="hint">Необязательное поле</div>
+        </div>
+        <div id="status"></div>
+    </div>
 
-  <!-- Подключение Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-database-compat.js"></script>
-  <!-- Если нужен Firestore вместо Realtime Database, добавьте: -->
-  <!-- <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore-compat.js"></script> -->
+    <script>
+        // Инициализация Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Расширяем на всю высоту
+        tg.ready(); // Сообщаем приложению, что страница загружена
 
-  <script>
-    // TODO: вставьте сюда вашу конфигурацию Firebase (см. раздел 4 ниже)
-    var firebaseConfig = {
-      apiKey: "API_KEY",
-      authDomain: "PROJECT_ID.firebaseapp.com",
-      databaseURL: "https://DATABASE_NAME.firebaseio.com",  // для Realtime DB
-      projectId: "PROJECT_ID",
-      storageBucket: "PROJECT_ID.appspot.com",
-      messagingSenderId: "SENDER_ID",
-      appId: "APP_ID"
-    };
-    // Инициализация Firebase
-    firebase.initializeApp(firebaseConfig);
-    var db = firebase.database();
+        // Настройка главной кнопки
+        tg.MainButton.setText('Отправить данные');
+        tg.MainButton.show();
+        
+        const nameInput = document.getElementById('name');
+        const phoneInput = document.getElementById('phone');
+        const statusElem = document.getElementById('status');
 
-    // Обработчик события отправки формы
-    document.getElementById('feedbackForm').addEventListener('submit', function(e) {
-      e.preventDefault(); // предотвращаем перезагрузку страницы
-      var nameVal = document.getElementById('name').value.trim();
-      var commentVal = document.getElementById('comment').value.trim();
-      if (!nameVal) {
-        alert('Пожалуйста, укажите имя.');
-        return;
-      }
-      // Создаём новую запись в базе (узел "feedback")
-      var newEntry = db.ref('feedback').push();
-      newEntry.set({
-        name: nameVal,
-        comment: commentVal || '',
-        date: new Date().toLocaleString()
-      }, function(error) {
-        if (error) {
-          alert('Ошибка при отправке: ' + error);
-        } else {
-          alert('Данные успешно отправлены!');
-          document.getElementById('feedbackForm').reset();
-        }
-      });
-      // Если используется Firestore вместо Realtime DB, код может выглядеть так:
-      // firebase.firestore().collection('feedback').add({ name: nameVal, comment: commentVal, date: firebase.firestore.FieldValue.serverTimestamp() });
-    });
-  </script>
+        // Простая валидация при нажатии на главную кнопку
+        tg.MainButton.onClick(function() {
+            // Собираем данные из формы
+            const name = nameInput.value.trim();
+            const phone = phoneInput.value.trim();
+            
+            // Проверка, что хотя бы одно поле заполнено
+            if (name === '' && phone === '') {
+                statusElem.textContent = 'Пожалуйста, заполните хотя бы одно поле';
+                statusElem.className = 'error';
+                return;
+            }
+            
+            // Создаем объект с данными для отправки
+            const formData = {
+                name: name || 'Не указано',
+                phone: phone || 'Не указано'
+            };
+            
+            // Отправляем данные обратно в Telegram бот
+            tg.sendData(JSON.stringify(formData));
+            
+            // Показываем сообщение об успешной отправке
+            statusElem.textContent = 'Данные успешно отправлены!';
+            statusElem.className = 'success';
+            
+            // Опционально: можно закрыть Mini App через некоторое время
+            setTimeout(() => {
+                tg.close();
+            }, 2000);
+        });
+
+        // Простая маска для телефона
+        phoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 0 && value[0] !== '7') {
+                value = '7' + value;
+            }
+            let formattedValue = '';
+            if (value.length > 0) {
+                formattedValue = '+' + value[0];
+            }
+            if (value.length > 1) {
+                formattedValue += ' (' + value.substring(1, 4);
+            }
+            if (value.length > 4) {
+                formattedValue += ') ' + value.substring(4, 7);
+            }
+            if (value.length > 7) {
+                formattedValue += '-' + value.substring(7, 9);
+            }
+            if (value.length > 9) {
+                formattedValue += '-' + value.substring(9, 11);
+            }
+            e.target.value = formattedValue;
+        });
+    </script>
 </body>
 </html>
